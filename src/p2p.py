@@ -1,5 +1,7 @@
 import socket
 import threading
+import signal
+import sys
 
 DISCOVERY_SERVER = ("127.0.0.1", 5000) # Hard coded for now
 peers = []
@@ -142,16 +144,30 @@ def connect_to_peers(peer_list):
 
         except Exception as e:
             print(f"Failed to connect to peer {host}:{port}: {e}")
+            
+def graceful_exit(port):
+    print("\n[DISCONNECTING] Unregistering from discovery server and closing connections...")
+    unregister_from_discovery(port)
+    for peer in peers:
+        try:
+            peer.close()
+        except:
+            pass
+    print("[SHUTDOWN COMPLETE] Peer disconnected.")
+    sys.exit(0)
 
 def start_peer(port):
     global peers
     peers = []
 
     register_with_discovery(port)
-    threading.Thread(target=start_peer_server, args=(peers, port)).start()
+    signal.signal(signal.SIGINT, lambda sig, frame: graceful_exit(port))
+    signal.signal(signal.SIGTERM, lambda sig, frame: graceful_exit(port))
+
+    threading.Thread(target=start_peer_server, args=(peers, port), daemon=True).start()
 
     while True:
-        choice = input("\nOptions:\n1. List all peers\n2. Connect to a peer\n3. Connect to all peers\n4. Send a message\nEnter choice: ").strip()
+        choice = input("\nOptions:\n1. List all peers\n2. Connect to a peer\n3. Connect to all peers\n4. Send a message\n5. Disconnect\nEnter choice: ").strip()
 
         if choice == "1":
             list_peers()
@@ -171,8 +187,10 @@ def start_peer(port):
             else:
                 message = input("Enter message: ")
                 broadcast(message, peers)
+        elif choice == "5":
+            graceful_exit(port) 
         else:
-            print("Invalid choice. Please enter 1, 2, 3, or 4.")
+            print("Invalid choice. Please enter 1, 2, 3, 4, or 5.")
 
 if __name__ == "__main__":
     port = int(input("Enter your listening port: "))
