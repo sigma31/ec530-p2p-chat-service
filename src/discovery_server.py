@@ -19,6 +19,24 @@ def handle_client(client_socket):
         elif command == "GET_PEERS":
             client_socket.send("\n".join(f"{h}:{p}" for h, p in peers).encode('utf-8'))
 
+        elif command == "LIST_PEERS":
+            if peers:
+                peer_list = "\n".join(f"{h}:{p}" for h, p in peers)
+                client_socket.send(peer_list.encode('utf-8'))
+            else:
+                client_socket.send("NO_PEERS".encode('utf-8'))
+
+        elif command == "CONNECT_TO":
+            if len(args) == 1:
+                requested_host = args[0]
+                peer = next((f"{h}:{p}" for h, p in peers if h == requested_host), None)
+                if peer:
+                    client_socket.send(peer.encode('utf-8'))
+                else:
+                    client_socket.send("NOT_FOUND".encode('utf-8'))
+            else:
+                client_socket.send("INVALID_COMMAND".encode('utf-8'))
+
         elif command == "UNREGISTER":
             host, port = args
             peer = (host, int(port))
