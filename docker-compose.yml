@@ -1,0 +1,34 @@
+services:
+  discovery-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.discovery
+    ports:
+      - "5000:5000"
+    container_name: discovery-server
+
+  peer1:
+    build:
+      context: .
+      dockerfile: Dockerfile.peer
+    environment:
+      - PEER_PORT=6001
+    stdin_open: true
+    tty: true
+    ports:
+      - "6001:6001"
+    depends_on:
+      - discovery-server
+
+  peer2:
+    build:
+      context: .
+      dockerfile: Dockerfile.peer
+    environment:
+      - PEER_PORT=6002
+    stdin_open: true
+    tty: true
+    ports:
+      - "6002:6002"
+    depends_on:
+      - discovery-server

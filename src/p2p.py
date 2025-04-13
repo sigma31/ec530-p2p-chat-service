@@ -2,6 +2,7 @@ import socket
 import threading
 import signal
 import sys
+import os
 
 DISCOVERY_SERVER = ("127.0.0.1", 5000) # Hard coded for now
 peers = {}
@@ -216,5 +217,10 @@ def start_peer(port):
             graceful_exit(port)
 
 if __name__ == "__main__":
-    port = int(input("Enter your listening port: "))
+    port_env = os.environ.get("PEER_PORT")
+    if port_env and port_env.isdigit():
+        port = int(port_env)
+    else:
+        port = int(input("Enter your listening port: "))
+
     start_peer(port)
